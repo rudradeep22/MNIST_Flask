@@ -35,32 +35,21 @@ def build_gan(generator, discriminator):
     model.add(discriminator)
     return model
 
-# Load the dataset
 (x_train, _), (_, _) = tf.keras.datasets.mnist.load_data()
 x_train = (x_train - 127.5) / 127.5  # Normalize to -1 to 1
 x_train = np.expand_dims(x_train, axis=-1)
-
-# Build and compile the discriminator
 discriminator = build_discriminator()
 discriminator.compile(loss='binary_crossentropy', optimizer=Adam(0.0002, 0.5), metrics=['accuracy'])
-
-# Build the generator
 generator = build_generator()
-
-# The discriminator takes generated images as input and determines validity
 discriminator.trainable = False
-
-# The GAN model (stacked generator and discriminator)
 gan = build_gan(generator, discriminator)
 gan.compile(loss='binary_crossentropy', optimizer=Adam(0.0002, 0.5))
 
-# Training the GAN
 epochs = 10000
 batch_size = 64
 half_batch = batch_size // 2
 
 for epoch in range(epochs):
-    # Train the discriminator
     idx = np.random.randint(0, x_train.shape[0], half_batch)
     real_imgs = x_train[idx]
     
@@ -70,14 +59,10 @@ for epoch in range(epochs):
     d_loss_real = discriminator.train_on_batch(real_imgs, np.ones((half_batch, 1)))
     d_loss_fake = discriminator.train_on_batch(gen_imgs, np.zeros((half_batch, 1)))
     d_loss = 0.5 * np.add(d_loss_real, d_loss_fake)
-    
-    # Train the generator
     noise = np.random.normal(0, 1, (batch_size, 100))
     valid_y = np.array([1] * batch_size)
     
     g_loss = gan.train_on_batch(noise, valid_y)
-    
-    # Print the progress
     print(f"{epoch} [D loss: {d_loss[0]} | D accuracy: {100*d_loss[1]}] [G loss: {g_loss}]")
     
     if epoch % 1000 == 0:
